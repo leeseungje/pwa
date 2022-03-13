@@ -14,20 +14,20 @@
 
 - 해당 웹 사이트가 모바일 화면에서 표시될 아이콘 이미지 지정
   `manifest.json`
-  ```javascript
+  ```json
   {
-    "icons" : [
-        {
-            "src" : "images/icons/192x.png",
-            "type" : "image/png",
-            "sizes" : "192x192"
-        },
-        {
-            "src" : "images/icons/512x.png",
-            "type" : "image/png",
-            "sizes" : "512x512"
-        }
-    ],
+    "icons": [
+      {
+        "src": "images/icons/192x.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "images/icons/512x.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ]
   }
   ```
   - `src`: 로딩할 이미지 파일 경로
@@ -41,8 +41,10 @@
 - 아이콘+이름+배경색 화면을 자동으로 꾸려주게 된다
 - 배경색 설정은 `background_color` 속성
   `mainfest.json`
-  ```javascript
-  "background_color" : "#FDFDFD",
+  ```json
+  {
+    "background_color": "#FDFDFD"
+  }
   ```
   - 아이콘은 icon에 지정한 이미지중 192px에 가장 가까운 크기로 지정
   - 그러므로 192px크기의 이미지는 꼭 지정해야 한다.
