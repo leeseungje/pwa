@@ -6,7 +6,15 @@
 
 ### Progressive Web Apps
 
+- google I/O 2016에서 소개된 미래의 웹 기술 이며 모바일 앱과 웹 기술의 장점을 결합시킨 웹앱.
+- 해당 기술을 사용하면 앱을 별도로 설치할 필요가 없으며, 관련 된 앱을 푸시로 받을 수 있으며, 느린 네트워크에서도 빠르게 로드된다.
+- PWA를 통해서 사용자는 모바일 앱과 같은 사용자 경험을 누릴 수 있으며 모바일 푸시, 오프라인이나 저속의 네트웍 속도에서의 사용, 무엇보다도 HTML, JAVASCRIPT, CSS를 이용하여 구현할 수 있습니다.
+- PWA를 구현하ㅓ기 위해선 `mainfest.json`과 `Service workers`라는 2가지 기술이 필요 하다.
+
 ### Web App Manifest
+
+- pwa의 설치와 앱 구성정보를 담고 있는 json형식의 설정 파일
+- 앱 아이콘, 화면 런쳐 방식 및 뱃경색, 시작 페이지 등을 설정할 수 있는 json 파일
 
 #### Web App Manifest 주요 구정 정보
 
@@ -119,11 +127,16 @@
     5. Service Worker의 fetch 이벤트 구현
     6. `HTTPS`
 
+8. [기타 구성정보](https://developer.mozilla.org/ko/docs/Web/Manifest)
+
 ### Service Worker
 
+![Service Workers](./images/md/service_worker.png)
+
+- PWA에서 가장 중요한 역할 Offline Experience와 Mobile & Web Push의 기반 기술
 - 브라우저와 서버 사이의 미들웨어 역할을 하는 스크립트 파일
 - `미들웨어`: 보통 브라우저에서 서버를 요청하는 방식이지만 중간에 매개체가 생긴다 그걸 미들웨어(스크립트 파일)라 한다.
-- PWA에서 가장 중요한 역할 Offline Experience와 Mobile & Web Push의 기반 기술
+- 캐싱을 어떻게 할 것인시 요청 시 캐시를 먼저 보여줄지 웹서버를 통해서 먼저 보여줄지 push등등에 대한 프로그래밍 기술
 
 #### Service Worker 특징
 
@@ -139,3 +152,76 @@
    - 크롬 개발자 도구의 Console과의 별개의 서비스워커 전용 Console 존재
 7. Dom에 직접적으로 접근이 불가능
 8. 사용하지 않을 때 자체적으로 종료, 필요시에 다시 동작
+
+#### Service Worker 배경
+
+- 기존에 이미 존재하던 기술들을 보안하고 진화
+  1. `AppCache`
+     - 오프라인 경험을 제공하기 위한 캐시 제공, HTML 표준
+     - 복수 페이지 앱에서 오동작, 파일 편화에 대해 둔감한 캐싱 문제
+  2. `Workers`
+     - 특정 작업중 화면과 관계없는 부분을 백그라운드에서 실행 및 처리하기 위한 수단
+     - `종류`
+       1. Dedicated Workers, 라이프 싸이클 - 페이지 종속적
+       2. Shared Workers, 브라우징(브라우저) 컨텍스트
+          javascript UI 쓰레드와 별개의 쓰레드
+          페이지에 비종속적이며 직접적인 DOM접근 불가
+
+#### Service Worker 등록
+
+- `index.html`
+
+```javascript
+if ('serviceWorker' in navigator) {
+  // 간단한 실행
+  navigator.serviceWorker
+    .register('./service-worker.js') //서비스 워커 등록
+    .then(function (success) {
+      // 성공
+      console.log('[ServiceWorker Success]', success)
+    })
+    .catch(function (error) {
+      // 실패
+      console.log('[ServiceWorker Fail]', error)
+    })
+}
+```
+
+- 브라우저에 존재 유무를 확인 후 `register()` 사용
+
+#### Service Worker 설치
+
+- `register()`에서 등록한 스크립트 파일에서 `install()` 호출
+- `service-worker.js`
+
+```javascript
+var CACHE_NAME = 'pwa-offline-v1' // 캐싱 스토리지에 저장될 파일 이름
+var filesToCache = [
+  // 캐싱할 파일 목록
+  '/', // index.html
+  '/css/app.css'
+]
+// 서비스 워커 설치 (웹 지원 캐싱)
+self.addEventListener('install', function (event) {
+  // self는 window를 의미 한다.
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME) // pwa 파일
+      .then(function (cache) {
+        // pwa 파일에 다 집어 넣어라
+        return cache.addAll(filesToCache)
+      })
+      .catch(function (error) {
+        return console.log(error)
+      })
+  )
+})
+```
+
+- `waitUntil()`: 안의 로직이 수행될 때 까지 대기
+
+#### Service Worker 네트워크 요청 응답
+
+![Fetch](./images/md/fetch.png)
+
+- 서비스워커 설치 후 캐쉬된 자원에 대한 네트워크 요청이 있을 때는 캐쉬로 돌려준다.
