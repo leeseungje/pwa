@@ -142,7 +142,7 @@
 
 1. 브라우저의 백그라운드에서 실행되며 웹 페이지와 별개의 라이프싸이클을 가진다.(영역이 다르다)
    - javascript ui 쓰레드랑 별도로 동작하는 또 다른 쓰레드
-2. 네트워크 요청을 가로챌 수 있어 해당 자원에 대한 캐쉬 제공 또는 서버에 자원 요청
+2. 네트워크 요청을 가로챌 수 있어 해당 자원에 대한 캐시 제공 또는 서버에 자원 요청
    - 프로그래밍 가능한 네트워크 프록시
      `프록시`:중계서버
 3. 브라우저 종속적인 생명주기(페이지가 종료 되더라도 서비스 워커는 죽지 않는다.)
@@ -224,4 +224,85 @@ self.addEventListener('install', function (event) {
 
 ![Fetch](./images/md/fetch.png)
 
-- 서비스워커 설치 후 캐쉬된 자원에 대한 네트워크 요청이 있을 때는 캐쉬로 돌려준다.
+- 서비스워커 설치 후 Cache가 있으면 2번에서 3번으로 전달 되고
+- 만약 없으면 4번으로 Network 요청 발생 시켜서 5번 Cache로 전달 한다.
+
+```javascript
+self.addEventListener('fetch', function (event) {
+  console.log('[Service Worker] Fetch', event)
+  event.respondWith(
+    caches
+      .match(event.request)
+      .then(function (response) {
+        return response || fetch(event.request)
+        // 해당 부분이 Cache에 접근 하는 방법
+      })
+      .catch(function (error) {
+        return console.log(error)
+      })
+  )
+})
+```
+
+#### Service Worker 활성화 및 업데이트
+
+- 새로운 서비스워커가 설치되면 활성화 단계로 넘어온다.
+- 이전에 사용하던 서비스워커와 이전 캐시는 모두 삭제하는 작업 진행
+- 새로운 캐시가 필요할때 `activate`가 필요 하다.
+
+```javascript
+// Service Worker 업데이트
+self.addEventListener('activate', function (event) {
+  // 캐시 필터링 목록
+  var newCacheList = ['pwa-offline-v3']
+  event.waitUntil(
+    caches
+      .keys()
+      .then(function (cacheList) {
+        return Promise.all(
+          cacheList.map(function (cacheName) {
+            // newCacheList 목록들에서 cacheName 이 없으면 -1을 반환
+            if (newCacheList.indexOf(cacheName) === -1) {
+              // 목록이 없으면 캐시를 지우겠다.
+              return caches.delete(cacheName) // Promise 객체
+            }
+          })
+        )
+      })
+      .catch(function (error) {
+        return console.log(error)
+      })
+  )
+})
+```
+
+`궁금증`
+해당 `activate`에서 `filesToCache` 이미지를 지우고 offline을 해도 이미지가 살아있는 부분은 왜그런지 이해가 되질 않습니다.
+
+#### Service Worcker 라이프사이클
+
+1. `index.html`에서 브라우저의 서비스워커의 지원여부 확인 29~41줄
+2. `register()`api를 활용해서 `service-worker.js`를 등록
+3. service-worker.js에서 캐시를 선언하고 `install`로 저장
+4. `fetch`이벤트를 통하여 네트워크 요청 가로채기
+5. service-worker.js의 파일이 변화가 있을경우 캐시의 업데이트를 위해 `activate`를 사용
+
+### 서비스 워커 보조 라이브러리
+
+- 해당 라이브러리를 사용하면 훨씬 손이 덜가고 구현할 수 있는 기능들이 많아진다.
+
+#### Service Worker precaching
+
+[sw-precache](https://github.com/GoogleChromeLabs/sw-precache)
+
+1. 해당폴더에서 sw-prechache를 설치 한다.
+   `yarn add sw-precache`
+2. `sw-config.js`파일을 생성 하여 아래와 같이 필요한 경로를 추가 한다.
+
+```javascript
+module.exports = {
+  staticFileGlobs: ['index.html', 'manifest.json', 'css/*.css', 'images/**.*']
+}
+```
+
+3. `yarn sw-precache --config sw-config.js` 를 실행하면 기존에 설명했던 내용들이 `service-worker.js`로 자동으로 출력 된다.

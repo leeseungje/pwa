@@ -21,6 +21,7 @@ self.addEventListener('install', function (event) {
   );
 });
 
+// Service Worker 네트워크 요청 응답
 self.addEventListener('fetch', function (event) {
   console.log('[Service Worker] Fetch');
   event.respondWith(
@@ -33,3 +34,5 @@ self.addEventListener('fetch', function (event) {
       })
   );
 });
+
+// Service Worker 업데이트
